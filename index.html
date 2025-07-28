@@ -2,25 +2,140 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <title>GPT Переводчик</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Название Блюда с GPT</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f4;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 90vh;
+      }
+      h1 {
+        color: #0056b3;
+      }
+      .container {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 600px;
+        text-align: center;
+      }
+      textarea {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        min-height: 100px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      #loading {
+        margin-top: 15px;
+        font-style: italic;
+        color: #666;
+        display: none; /* Скрыто по умолчанию */
+      }
+      #result {
+        margin-top: 25px;
+        padding: 20px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        text-align: left;
+        white-space: pre-wrap; /* Сохраняет форматирование GPT */
+        word-wrap: break-word; /* Переносит длинные слова */
+        min-height: 50px;
+        line-height: 1.6;
+        border: 1px solid #dee2e6;
+      }
+      #result p {
+        margin: 5px 0;
+      }
+      #result strong {
+        color: #0056b3;
+      }
+    </style>
   </head>
   <body>
-    <h1>Переводчик с GPT</h1>
-    <textarea id="text" placeholder="Введите текст..." rows="6" cols="60"></textarea><br />
-    <button onclick="translate()">Перевести</button>
-    <pre id="result"></pre>
+    <div class="container">
+      <h1>Предложите название блюда с GPT</h1>
+      <textarea
+        id="dishDescription"
+        placeholder="Опишите блюдо (например: 'Обжаренный говяжий фарш, маринованные огурцы, лист салата айсберг, свежие томаты, сыр чеддер и красный лук, подается с классической заправкой Биг-Мак')..."
+        rows="6"
+        cols="60"
+      ></textarea
+      ><br />
+      <button onclick="generateDishName()">Предложить название</button>
+      <div id="loading">Загрузка...</div>
+      <div id="result">
+        <p>Названия появятся здесь:</p>
+      </div>
+    </div>
 
     <script>
-      // Теперь ваш JS код будет правильно интерпретирован
-      async function translate() {
-        const text = document.getElementById('text').value;
-        const res = await fetch('/api/translate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
-        });
-        const data = await await res.json(); // Исправлена опечатка (было await res.json();)
-        document.getElementById('result').textContent = data.result || 'Ошибка';
+      async function generateDishName() {
+        const dishDescription = document.getElementById('dishDescription').value.trim();
+        const resultDiv = document.getElementById('result');
+        const loadingDiv = document.getElementById('loading');
+
+        if (!dishDescription) {
+          resultDiv.innerHTML = '<p style="color: red;">Пожалуйста, введите описание блюда.</p>';
+          return;
+        }
+
+        loadingDiv.style.display = 'block'; // Показываем "Загрузка..."
+        resultDiv.innerHTML = '<p>Названия появятся здесь:</p>'; // Очищаем предыдущий результат
+
+        try {
+          const res = await fetch('/api/generate-dish-name', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description: dishDescription }),
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
+          }
+
+          const data = await res.json();
+          // Мы ожидаем, что API вернет nameRu и nameKz
+          if (data.nameRu && data.nameKz) {
+            resultDiv.innerHTML = `
+              <p><strong>Русский:</strong> ${data.nameRu}</p>
+              <p><strong>Қазақша:</strong> ${data.nameKz}</p>
+            `;
+          } else {
+            resultDiv.innerHTML = '<p style="color: orange;">Не удалось получить названия. Попробуйте еще раз.</p>';
+            console.error('Неожиданный ответ от API:', data);
+          }
+        } catch (error) {
+          console.error('Ошибка:', error);
+          resultDiv.innerHTML = `<p style="color: red;">Произошла ошибка при получении названия: ${error.message}</p>`;
+        } finally {
+          loadingDiv.style.display = 'none'; // Скрываем "Загрузка..."
+        }
       }
     </script>
   </body>
