@@ -1,1 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>GPT Переводчик</title>
+</head>
+<body>
+  <h1>Переводчик с GPT</h1>
+  <textarea id="text" placeholder="Введите текст..." rows="6" cols="60"></textarea><br>
+  <button onclick="translate()">Перевести</button>
+  <pre id="result"></pre>
+
+  <script>
+    async function translate() {
+      const text = document.getElementById('text').value;
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      const data = await res.json();
+      document.getElementById('result').textContent = data.result || 'Ошибка';
+    }
+  </script>
+</body>
+</html>
 
