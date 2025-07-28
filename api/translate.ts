@@ -1,4 +1,7 @@
-export default async function handler(req, res) {
+// api/translate.js
+// (Для Vercel Serverless Function, без Next.js)
+
+module.exports = async (req, res) => {
   const { text } = req.body;
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -24,4 +27,4 @@ export default async function handler(req, res) {
   const data = await response.json();
   const result = data.choices?.[0]?.message?.content;
   res.status(200).json({ result });
-}
+};
